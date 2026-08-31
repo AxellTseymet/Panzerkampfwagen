@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -56,7 +56,6 @@
             text-shadow: 3px 3px 0 #000, 0 0 20px rgba(255, 204, 0, 0.4);
             text-transform: uppercase;
             letter-spacing: 1px;
-            animation: none;
         }
 
         .subtitle {
@@ -135,7 +134,6 @@
             pointer-events: auto;
         }
 
-        .contact-link,
         .contact-handle {
             font-family: 'Warface', 'Arial Black', sans-serif;
             color: #ffcc00;
@@ -147,20 +145,10 @@
             display: inline-block;
             max-width: 100%;
             word-break: break-word;
-        }
-
-        .contact-link:hover,
-        .contact-handle:hover {
-            opacity: 0.9;
-        }
-
-        .contact-link {
-            font-size: 1.05rem;
-        }
-
-        .contact-handle {
             font-size: 1.2rem;
         }
+
+        .contact-handle:hover { opacity: 0.9; }
 
         .drag-tip {
             position: absolute;
@@ -187,62 +175,16 @@
         }
 
         @media (max-width: 768px) {
-            body {
-                padding: 20px 14px;
-                justify-content: center;
-            }
-
-            h1 {
-                font-size: 2.1rem;
-                line-height: 1.1;
-                max-width: 90vw;
-            }
-
-            .subtitle {
-                font-size: 0.95rem;
-                padding: 6px 12px;
-            }
-
-            #timer {
-                gap: 8px;
-                margin-top: 18px;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-
-            .time-block {
-                min-width: 68px;
-                padding: 10px 12px;
-                box-shadow: 3px 3px 0 #000;
-            }
-
-            .time-number {
-                font-size: 2.1rem;
-            }
-
-            .time-label {
-                font-size: 0.7rem;
-            }
-
-            .motivation {
-                margin-top: 28px;
-                font-size: 0.9rem;
-                max-width: 88vw;
-            }
-
-            .contact-block {
-                margin-top: 14px;
-                gap: 6px;
-            }
-
-            .contact-link {
-                font-size: 0.9rem;
-            }
-
-            .contact-handle {
-                font-size: 1rem;
-            }
-
+            body { padding: 20px 14px; justify-content: center; }
+            h1 { font-size: 2.1rem; line-height: 1.1; max-width: 90vw; }
+            .subtitle { font-size: 0.95rem; padding: 6px 12px; }
+            #timer { gap: 8px; margin-top: 18px; flex-wrap: wrap; justify-content: center; }
+            .time-block { min-width: 68px; padding: 10px 12px; box-shadow: 3px 3px 0 #000; }
+            .time-number { font-size: 2.1rem; }
+            .time-label { font-size: 0.7rem; }
+            .motivation { margin-top: 28px; font-size: 0.9rem; max-width: 88vw; }
+            .contact-block { margin-top: 14px; gap: 6px; }
+            .contact-handle { font-size: 1rem; }
             .drag-tip {
                 left: 50%;
                 top: 16%;
@@ -250,17 +192,7 @@
                 font-size: 0.72rem;
                 gap: 6px;
             }
-
-            .drag-tip .arrow {
-                font-size: 1.5rem;
-                transform: rotate(-90deg);
-            }
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
+            .drag-tip .arrow { font-size: 1.5rem; transform: rotate(-90deg); }
         }
     </style>
 </head>
@@ -287,8 +219,26 @@
     <script>
         const canvas = document.getElementById('ribbonCanvas');
         const ctx = canvas.getContext('2d');
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        resize();
+
+        const patternCanvas = document.createElement('canvas');
+        const stripeWidth = 24;
+        patternCanvas.width = stripeWidth * 2;
+        patternCanvas.height = stripeWidth * 2;
+        const pCtx = patternCanvas.getContext('2d');
+
+        pCtx.fillStyle = '#ffcc00';
+        pCtx.fillRect(0, 0, stripeWidth, stripeWidth * 2);
+        pCtx.fillStyle = '#000000';
+        pCtx.fillRect(stripeWidth, 0, stripeWidth, stripeWidth * 2);
+
+        const stripePattern = ctx.createPattern(patternCanvas, 'repeat');
 
         const mouse = { x: 0, y: 0, down: false, target: null, segment: 0 };
 
@@ -306,6 +256,7 @@
             }
 
             generatePoints() {
+                this.points = [];
                 for (let i = 0; i < this.segCount; i++) {
                     const x = width * (this.percentX / 100) + Math.sin((i + this.seed) * 0.9) * (8 + this.widthValue * 0.15);
                     const y = -80 + i * this.segLength + Math.cos(this.seed + i * 0.7) * 10;
@@ -313,18 +264,18 @@
                 }
             }
 
-            update() {
-                this.points[0].x = width * (this.percentX / 100) + Math.sin(Date.now() * 0.001 + this.seed) * 5;
+            update(time) {
+                this.points[0].x = width * (this.percentX / 100) + Math.sin(time * 0.001 + this.seed) * 5;
                 this.points[0].y = -80;
 
                 for (let i = 1; i < this.points.length; i++) {
                     const p = this.points[i];
-                    const vx = p.x - p.oldX;
-                    const vy = p.y - p.oldY;
+                    const vx = (p.x - p.oldX) * 0.94;
+                    const vy = (p.y - p.oldY) * 0.94;
                     p.oldX = p.x;
                     p.oldY = p.y;
-                    p.x += vx * 0.94;
-                    p.y += vy * 0.94 + 0.55;
+                    p.x += vx;
+                    p.y += vy + 0.55;
                 }
 
                 if (mouse.down && mouse.target === this) {
@@ -333,22 +284,21 @@
                     p.y += (mouse.y - p.y) * 0.18;
                 }
 
-                for (let iter = 0; iter < 5; iter++) {
+                for (let iter = 0; iter < 3; iter++) {
                     for (let i = 0; i < this.points.length - 1; i++) {
                         const p1 = this.points[i];
                         const p2 = this.points[i + 1];
                         const dx = p2.x - p1.x;
                         const dy = p2.y - p1.y;
                         const dist = Math.hypot(dx, dy) || 1;
-                        const diff = this.segLength - dist;
-                        const offsetX = (dx / dist) * (diff / 2);
-                        const offsetY = (dy / dist) * (diff / 2);
+                        const diff = (this.segLength - dist) / dist * 0.5;
+                        const offsetX = dx * diff;
+                        const offsetY = dy * diff;
 
                         if (i > 0) {
                             p1.x -= offsetX;
                             p1.y -= offsetY;
                         }
-
                         p2.x += offsetX;
                         p2.y += offsetY;
                     }
@@ -356,78 +306,63 @@
             }
 
             draw() {
-                const left = [];
-                const right = [];
+                const len = this.points.length;
+                const left = new Array(len);
+                const right = new Array(len);
+                const half = this.widthValue / 2;
 
-                for (let i = 0; i < this.points.length; i++) {
+                for (let i = 0; i < len; i++) {
                     const p = this.points[i];
                     const prev = this.points[i > 0 ? i - 1 : 0];
-                    const next = this.points[i < this.points.length - 1 ? i + 1 : i];
+                    const next = this.points[i < len - 1 ? i + 1 : i];
                     const dx = next.x - prev.x;
                     const dy = next.y - prev.y;
-                    const len = Math.hypot(dx, dy) || 1;
-                    const nx = -dy / len;
-                    const ny = dx / len;
-                    const half = this.widthValue / 2;
+                    const dLen = Math.hypot(dx, dy) || 1;
+                    const nx = (-dy / dLen) * half;
+                    const ny = (dx / dLen) * half;
 
-                    left.push({ x: p.x + nx * half, y: p.y + ny * half });
-                    right.unshift({ x: p.x - nx * half, y: p.y - ny * half });
+                    left[i] = { x: p.x + nx, y: p.y + ny };
+                    right[len - 1 - i] = { x: p.x - nx, y: p.y - ny };
                 }
 
-                const tip = [];
-                const pA = left[left.length - 1];
+                const pA = left[len - 1];
                 const pB = right[0];
                 const baseLen = Math.hypot(pB.x - pA.x, pB.y - pA.y) || 1;
                 const ux = (pB.x - pA.x) / baseLen;
                 const uy = (pB.y - pA.y) / baseLen;
 
-                for (let i = 0; i <= 9; i++) {
+                ctx.beginPath();
+                ctx.moveTo(left[0].x, left[0].y);
+
+                for (let i = 1; i < len; i++) {
+                    ctx.lineTo(left[i].x, left[i].y);
+                }
+
+                for (let i = 1; i <= 8; i++) {
                     const t = i / 9;
                     const x = pA.x + (pB.x - pA.x) * t;
                     const y = pA.y + (pB.y - pA.y) * t;
                     const wave = Math.sin((i + this.seed) * 1.8) * (18 * (1 - t));
-                    tip.push({ x: x + uy * wave, y: y - ux * wave });
+                    ctx.lineTo(x + uy * wave, y - ux * wave);
                 }
 
-                const contour = [];
-                for (let i = 0; i < left.length; i++) contour.push(left[i]);
-                for (let i = 1; i < tip.length - 1; i++) contour.push(tip[i]);
-                for (let i = 0; i < right.length; i++) contour.push(right[i]);
-
-                const path = new Path2D();
-                path.moveTo(contour[0].x, contour[0].y);
-                for (let i = 1; i < contour.length; i++) {
-                    path.lineTo(contour[i].x, contour[i].y);
+                for (let i = 0; i < len; i++) {
+                    ctx.lineTo(right[i].x, right[i].y);
                 }
-                path.closePath();
+
+                ctx.closePath();
 
                 const start = this.points[0];
-                const end = this.points[this.points.length - 1];
+                const end = this.points[len - 1];
                 const angle = Math.atan2(end.y - start.y, end.x - start.x);
-                const centerX = (start.x + end.x) / 2;
-                const centerY = (start.y + end.y) / 2;
 
                 ctx.save();
-                ctx.beginPath();
-                path.moveTo(contour[0].x, contour[0].y);
-                for (let i = 1; i < contour.length; i++) {
-                    ctx.lineTo(contour[i].x, contour[i].y);
-                }
-                ctx.closePath();
                 ctx.clip();
-
-                ctx.translate(centerX, centerY);
+                ctx.translate((start.x + end.x) / 2, (start.y + end.y) / 2);
                 ctx.rotate(angle + Math.PI / 4);
 
-                const stripeWidth = 24;
-                const halfSpan = 2600;
-                for (let x = -halfSpan; x < halfSpan; x += stripeWidth * 2) {
-                    ctx.fillStyle = '#ffcc00';
-                    ctx.fillRect(x, -2200, stripeWidth, 4400);
-
-                    ctx.fillStyle = '#000000';
-                    ctx.fillRect(x + stripeWidth, -2200, stripeWidth, 4400);
-                }
+                ctx.fillStyle = stripePattern;
+                ctx.fillRect(-1000, -1000, 2000, 2000);
 
                 ctx.restore();
             }
@@ -456,26 +391,16 @@
 
         initRibbons();
 
-        function getMousePos(event) {
+        function handleStart(clientX, clientY) {
             const rect = canvas.getBoundingClientRect();
-            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
-            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
-            return {
-                x: clientX - rect.left,
-                y: clientY - rect.top
-            };
-        }
-
-        function handleStart(event) {
-            const pos = getMousePos(event);
-            mouse.x = pos.x;
-            mouse.y = pos.y;
+            mouse.x = clientX - rect.left;
+            mouse.y = clientY - rect.top;
             mouse.down = true;
 
             let minDist = Infinity;
             ribbons.forEach((ribbon) => {
                 ribbon.points.forEach((point, index) => {
-                    const dist = Math.hypot(point.x - pos.x, point.y - pos.y);
+                    const dist = Math.hypot(point.x - mouse.x, point.y - mouse.y);
                     if (dist < minDist && dist < 60) {
                         minDist = dist;
                         mouse.target = ribbon;
@@ -485,52 +410,47 @@
             });
         }
 
-        canvas.addEventListener('mousedown', handleStart);
-        canvas.addEventListener('touchstart', handleStart, { passive: true });
+        function handleMove(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = clientX - rect.left;
+            mouse.y = clientY - rect.top;
+        }
 
-        window.addEventListener('mousemove', (event) => {
-            const pos = getMousePos(event);
-            mouse.x = pos.x;
-            mouse.y = pos.y;
-        });
-
-        window.addEventListener('touchmove', (event) => {
-            if (event.touches && event.touches.length) {
-                const pos = getMousePos(event);
-                mouse.x = pos.x;
-                mouse.y = pos.y;
-            }
+        canvas.addEventListener('mousedown', e => handleStart(e.clientX, e.clientY));
+        canvas.addEventListener('touchstart', e => {
+            if (e.touches.length) handleStart(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: true });
 
-        window.addEventListener('mouseup', () => {
-            mouse.down = false;
-            mouse.target = null;
-        });
+        window.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
+        window.addEventListener('touchmove', e => {
+            if (e.touches.length) handleMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
 
-        window.addEventListener('touchend', () => {
-            mouse.down = false;
-            mouse.target = null;
-        });
+        window.addEventListener('mouseup', () => { mouse.down = false; mouse.target = null; });
+        window.addEventListener('touchend', () => { mouse.down = false; mouse.target = null; });
 
         window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+            resize();
             initRibbons();
         });
 
-        function drawLoop() {
+        function drawLoop(time) {
             ctx.clearRect(0, 0, width, height);
-            ribbons.forEach((ribbon) => {
-                ribbon.update();
-                ribbon.draw();
-            });
+            for (let i = 0; i < ribbons.length; i++) {
+                ribbons[i].update(time);
+                ribbons[i].draw();
+            }
             requestAnimationFrame(drawLoop);
         }
 
         requestAnimationFrame(drawLoop);
 
-        const currentYear = new Date().getFullYear();
-        const nextSummer = new Date(currentYear + 1, 5, 1, 0, 0, 0).getTime();
+        const elDays = document.getElementById('days');
+        const elHours = document.getElementById('hours');
+        const elMinutes = document.getElementById('minutes');
+        const elSeconds = document.getElementById('seconds');
+        const elPhrase = document.getElementById('phrase');
+
         const phrases = [
             'Каждый звонок приближает нас к лету... Или к отчислению.',
             'Терпение — твой главный скилл на этот год.',
@@ -539,17 +459,19 @@
             'Главное — пережить зиму, дальше проще.'
         ];
 
-        document.getElementById('phrase').textContent = phrases[Math.floor(Math.random() * phrases.length)];
+        elPhrase.textContent = phrases[Math.floor(Math.random() * phrases.length)];
 
         function updateTimer() {
+            const currentYear = new Date().getFullYear();
+            const nextSummer = new Date(currentYear + 1, 5, 1, 0, 0, 0).getTime();
             const difference = nextSummer - Date.now();
 
             if (difference <= 0) {
-                document.getElementById('days').textContent = '00';
-                document.getElementById('hours').textContent = '00';
-                document.getElementById('minutes').textContent = '00';
-                document.getElementById('seconds').textContent = '00';
-                document.getElementById('phrase').textContent = 'Лето пришло!';
+                elDays.textContent = '00';
+                elHours.textContent = '00';
+                elMinutes.textContent = '00';
+                elSeconds.textContent = '00';
+                elPhrase.textContent = 'Лето пришло!';
                 return;
             }
 
@@ -558,10 +480,10 @@
             const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-            document.getElementById('days').textContent = days < 10 ? '0' + days : days;
-            document.getElementById('hours').textContent = hours < 10 ? '0' + hours : hours;
-            document.getElementById('minutes').textContent = minutes < 10 ? '0' + minutes : minutes;
-            document.getElementById('seconds').textContent = seconds < 10 ? '0' + seconds : seconds;
+            elDays.textContent = String(days).padStart(2, '0');
+            elHours.textContent = String(hours).padStart(2, '0');
+            elMinutes.textContent = String(minutes).padStart(2, '0');
+            elSeconds.textContent = String(seconds).padStart(2, '0');
         }
 
         updateTimer();
