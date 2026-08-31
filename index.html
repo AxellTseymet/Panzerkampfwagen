@@ -1,0 +1,571 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panzerkampfwagen</title>
+    <link rel="icon" type="image/x-icon" href="skull.ico">
+    <style>
+        @font-face {
+            font-family: 'Warface';
+            src: url('warface.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: #0b0b0b;
+            color: #fff;
+            font-family: 'Warface', 'Arial Black', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+            overflow: hidden;
+            position: relative;
+            user-select: none;
+        }
+
+        #ribbonCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: auto;
+            z-index: 1;
+            cursor: grab;
+        }
+
+        #ribbonCanvas:active { cursor: grabbing; }
+
+        h1, .subtitle, #timer, .motivation {
+            position: relative;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 5px;
+            color: #ffcc00;
+            text-shadow: 3px 3px 0 #000, 0 0 20px rgba(255, 204, 0, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: none;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            background-color: #ffcc00;
+            color: #000;
+            padding: 5px 15px;
+            transform: rotate(-1deg);
+            box-shadow: 4px 4px 0 #000;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        #timer {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            pointer-events: auto;
+        }
+
+        .time-block {
+            background: #111;
+            padding: 15px 25px;
+            border: 3px solid #ffcc00;
+            box-shadow: 5px 5px 0 #000;
+            min-width: 90px;
+            position: relative;
+        }
+
+        .time-block::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(rgba(255,254,0,0.03) 50%, rgba(0,0,0,0.1) 50%), linear-gradient(90deg, rgba(255,255,255,0.03) 50%, rgba(0,0,0,0.1) 50%);
+            background-size: 4px 4px;
+            pointer-events: none;
+        }
+
+        .time-number {
+            font-size: 3.5rem;
+            color: #ffcc00;
+            display: block;
+            text-shadow: 2px 2px 0 #000;
+            position: relative;
+            z-index: 1;
+        }
+
+        .time-label {
+            font-size: 0.9rem;
+            color: #888;
+            text-transform: uppercase;
+            margin-top: 5px;
+            display: block;
+            position: relative;
+            z-index: 1;
+        }
+
+        .motivation {
+            margin-top: 50px;
+            font-size: 1.1rem;
+            color: #ffcc00;
+            max-width: 420px;
+            border-left: 4px solid #ffcc00;
+            padding-left: 15px;
+            text-align: left;
+        }
+
+        .contact-block {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .contact-link,
+        .contact-handle {
+            font-family: 'Warface', 'Arial Black', sans-serif;
+            color: #ffcc00;
+            text-decoration: none;
+            text-transform: lowercase;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 0 #000;
+            transition: opacity 0.2s ease;
+            display: inline-block;
+            max-width: 100%;
+            word-break: break-word;
+        }
+
+        .contact-link:hover,
+        .contact-handle:hover {
+            opacity: 0.9;
+        }
+
+        .contact-link {
+            font-size: 1.05rem;
+        }
+
+        .contact-handle {
+            font-size: 1.2rem;
+        }
+
+        .drag-tip {
+            position: absolute;
+            left: calc(50% - 160px);
+            top: calc(48% - 389px);
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ff2a2a;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 12;
+            pointer-events: none;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .drag-tip .arrow {
+            font-size: 2rem;
+            line-height: 1;
+            color: #ff2a2a;
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 14px;
+                justify-content: center;
+            }
+
+            h1 {
+                font-size: 2.1rem;
+                line-height: 1.1;
+                max-width: 90vw;
+            }
+
+            .subtitle {
+                font-size: 0.95rem;
+                padding: 6px 12px;
+            }
+
+            #timer {
+                gap: 8px;
+                margin-top: 18px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .time-block {
+                min-width: 68px;
+                padding: 10px 12px;
+                box-shadow: 3px 3px 0 #000;
+            }
+
+            .time-number {
+                font-size: 2.1rem;
+            }
+
+            .time-label {
+                font-size: 0.7rem;
+            }
+
+            .motivation {
+                margin-top: 28px;
+                font-size: 0.9rem;
+                max-width: 88vw;
+            }
+
+            .contact-block {
+                margin-top: 14px;
+                gap: 6px;
+            }
+
+            .contact-link {
+                font-size: 0.9rem;
+            }
+
+            .contact-handle {
+                font-size: 1rem;
+            }
+
+            .drag-tip {
+                left: 50%;
+                top: 16%;
+                transform: translate(-50%, 0);
+                font-size: 0.72rem;
+                gap: 6px;
+            }
+
+            .drag-tip .arrow {
+                font-size: 1.5rem;
+                transform: rotate(-90deg);
+            }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="ribbonCanvas"></canvas>
+    <div class="drag-tip"><span>можно двигать</span><span class="arrow">→</span></div>
+
+    <h1>Ждем лета</h1>
+    <div class="subtitle">До летней свободы осталось всего лишь:</div>
+
+    <div id="timer">
+        <div class="time-block"><span class="time-number" id="days">00</span><span class="time-label">Дней</span></div>
+        <div class="time-block"><span class="time-number" id="hours">00</span><span class="time-label">Часов</span></div>
+        <div class="time-block"><span class="time-number" id="minutes">00</span><span class="time-label">Минут</span></div>
+        <div class="time-block"><span class="time-number" id="seconds">00</span><span class="time-label">Секунд</span></div>
+    </div>
+
+    <div class="motivation" id="phrase">Держитесь, глупцы...</div>
+
+    <div class="contact-block">
+        <a class="contact-handle" href="https://t.me/PanzerMausVIII" target="_blank" rel="noopener noreferrer">@Panzerkampfwagen</a>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('ribbonCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        const mouse = { x: 0, y: 0, down: false, target: null, segment: 0 };
+
+        class Ribbon {
+            constructor({ percentX, widthValue, totalLength, angle, seed }) {
+                this.percentX = percentX;
+                this.widthValue = widthValue;
+                this.totalLength = totalLength;
+                this.angle = angle;
+                this.seed = seed;
+                this.segCount = 12;
+                this.segLength = totalLength / this.segCount;
+                this.points = [];
+                this.generatePoints();
+            }
+
+            generatePoints() {
+                for (let i = 0; i < this.segCount; i++) {
+                    const x = width * (this.percentX / 100) + Math.sin((i + this.seed) * 0.9) * (8 + this.widthValue * 0.15);
+                    const y = -80 + i * this.segLength + Math.cos(this.seed + i * 0.7) * 10;
+                    this.points.push({ x, y, oldX: x, oldY: y });
+                }
+            }
+
+            update() {
+                this.points[0].x = width * (this.percentX / 100) + Math.sin(Date.now() * 0.001 + this.seed) * 5;
+                this.points[0].y = -80;
+
+                for (let i = 1; i < this.points.length; i++) {
+                    const p = this.points[i];
+                    const vx = p.x - p.oldX;
+                    const vy = p.y - p.oldY;
+                    p.oldX = p.x;
+                    p.oldY = p.y;
+                    p.x += vx * 0.94;
+                    p.y += vy * 0.94 + 0.55;
+                }
+
+                if (mouse.down && mouse.target === this) {
+                    const p = this.points[mouse.segment];
+                    p.x += (mouse.x - p.x) * 0.18;
+                    p.y += (mouse.y - p.y) * 0.18;
+                }
+
+                for (let iter = 0; iter < 5; iter++) {
+                    for (let i = 0; i < this.points.length - 1; i++) {
+                        const p1 = this.points[i];
+                        const p2 = this.points[i + 1];
+                        const dx = p2.x - p1.x;
+                        const dy = p2.y - p1.y;
+                        const dist = Math.hypot(dx, dy) || 1;
+                        const diff = this.segLength - dist;
+                        const offsetX = (dx / dist) * (diff / 2);
+                        const offsetY = (dy / dist) * (diff / 2);
+
+                        if (i > 0) {
+                            p1.x -= offsetX;
+                            p1.y -= offsetY;
+                        }
+
+                        p2.x += offsetX;
+                        p2.y += offsetY;
+                    }
+                }
+            }
+
+            draw() {
+                const left = [];
+                const right = [];
+
+                for (let i = 0; i < this.points.length; i++) {
+                    const p = this.points[i];
+                    const prev = this.points[i > 0 ? i - 1 : 0];
+                    const next = this.points[i < this.points.length - 1 ? i + 1 : i];
+                    const dx = next.x - prev.x;
+                    const dy = next.y - prev.y;
+                    const len = Math.hypot(dx, dy) || 1;
+                    const nx = -dy / len;
+                    const ny = dx / len;
+                    const half = this.widthValue / 2;
+
+                    left.push({ x: p.x + nx * half, y: p.y + ny * half });
+                    right.unshift({ x: p.x - nx * half, y: p.y - ny * half });
+                }
+
+                const tip = [];
+                const pA = left[left.length - 1];
+                const pB = right[0];
+                const baseLen = Math.hypot(pB.x - pA.x, pB.y - pA.y) || 1;
+                const ux = (pB.x - pA.x) / baseLen;
+                const uy = (pB.y - pA.y) / baseLen;
+
+                for (let i = 0; i <= 9; i++) {
+                    const t = i / 9;
+                    const x = pA.x + (pB.x - pA.x) * t;
+                    const y = pA.y + (pB.y - pA.y) * t;
+                    const wave = Math.sin((i + this.seed) * 1.8) * (18 * (1 - t));
+                    tip.push({ x: x + uy * wave, y: y - ux * wave });
+                }
+
+                const contour = [];
+                for (let i = 0; i < left.length; i++) contour.push(left[i]);
+                for (let i = 1; i < tip.length - 1; i++) contour.push(tip[i]);
+                for (let i = 0; i < right.length; i++) contour.push(right[i]);
+
+                const path = new Path2D();
+                path.moveTo(contour[0].x, contour[0].y);
+                for (let i = 1; i < contour.length; i++) {
+                    path.lineTo(contour[i].x, contour[i].y);
+                }
+                path.closePath();
+
+                const start = this.points[0];
+                const end = this.points[this.points.length - 1];
+                const angle = Math.atan2(end.y - start.y, end.x - start.x);
+                const centerX = (start.x + end.x) / 2;
+                const centerY = (start.y + end.y) / 2;
+
+                ctx.save();
+                ctx.beginPath();
+                path.moveTo(contour[0].x, contour[0].y);
+                for (let i = 1; i < contour.length; i++) {
+                    ctx.lineTo(contour[i].x, contour[i].y);
+                }
+                ctx.closePath();
+                ctx.clip();
+
+                ctx.translate(centerX, centerY);
+                ctx.rotate(angle + Math.PI / 4);
+
+                const stripeWidth = 24;
+                const halfSpan = 2600;
+                for (let x = -halfSpan; x < halfSpan; x += stripeWidth * 2) {
+                    ctx.fillStyle = '#ffcc00';
+                    ctx.fillRect(x, -2200, stripeWidth, 4400);
+
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(x + stripeWidth, -2200, stripeWidth, 4400);
+                }
+
+                ctx.restore();
+            }
+        }
+
+        let ribbons = [];
+
+        function initRibbons() {
+            const mobile = window.innerWidth < 768;
+            const config = mobile ? [
+                { percentX: 8, widthValue: 26, totalLength: 150, angle: 28, seed: 0.8 },
+                { percentX: 28, widthValue: 42, totalLength: 200, angle: 20, seed: 1.7 },
+                { percentX: 50, widthValue: 32, totalLength: 140, angle: 24, seed: 2.6 },
+                { percentX: 72, widthValue: 50, totalLength: 220, angle: 18, seed: 3.9 },
+                { percentX: 92, widthValue: 28, totalLength: 170, angle: 30, seed: 5.2 }
+            ] : [
+                { percentX: 8, widthValue: 44, totalLength: 240, angle: 28, seed: 0.8 },
+                { percentX: 28, widthValue: 70, totalLength: 330, angle: 20, seed: 1.7 },
+                { percentX: 50, widthValue: 54, totalLength: 220, angle: 24, seed: 2.6 },
+                { percentX: 72, widthValue: 82, totalLength: 390, angle: 18, seed: 3.9 },
+                { percentX: 92, widthValue: 48, totalLength: 280, angle: 30, seed: 5.2 }
+            ];
+
+            ribbons = config.map(item => new Ribbon(item));
+        }
+
+        initRibbons();
+
+        function getMousePos(event) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function handleStart(event) {
+            const pos = getMousePos(event);
+            mouse.x = pos.x;
+            mouse.y = pos.y;
+            mouse.down = true;
+
+            let minDist = Infinity;
+            ribbons.forEach((ribbon) => {
+                ribbon.points.forEach((point, index) => {
+                    const dist = Math.hypot(point.x - pos.x, point.y - pos.y);
+                    if (dist < minDist && dist < 60) {
+                        minDist = dist;
+                        mouse.target = ribbon;
+                        mouse.segment = index;
+                    }
+                });
+            });
+        }
+
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('touchstart', handleStart, { passive: true });
+
+        window.addEventListener('mousemove', (event) => {
+            const pos = getMousePos(event);
+            mouse.x = pos.x;
+            mouse.y = pos.y;
+        });
+
+        window.addEventListener('touchmove', (event) => {
+            if (event.touches && event.touches.length) {
+                const pos = getMousePos(event);
+                mouse.x = pos.x;
+                mouse.y = pos.y;
+            }
+        }, { passive: true });
+
+        window.addEventListener('mouseup', () => {
+            mouse.down = false;
+            mouse.target = null;
+        });
+
+        window.addEventListener('touchend', () => {
+            mouse.down = false;
+            mouse.target = null;
+        });
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            initRibbons();
+        });
+
+        function drawLoop() {
+            ctx.clearRect(0, 0, width, height);
+            ribbons.forEach((ribbon) => {
+                ribbon.update();
+                ribbon.draw();
+            });
+            requestAnimationFrame(drawLoop);
+        }
+
+        requestAnimationFrame(drawLoop);
+
+        const currentYear = new Date().getFullYear();
+        const nextSummer = new Date(currentYear + 1, 5, 1, 0, 0, 0).getTime();
+        const phrases = [
+            'Каждый звонок приближает нас к лету... Или к отчислению.',
+            'Терпение — твой главный скилл на этот год.',
+            'Помним, любим, скорбим по теплым дням.',
+            'Не плачь, потому что это началось. Улыбнись, потому что... ладно, плачь.',
+            'Главное — пережить зиму, дальше проще.'
+        ];
+
+        document.getElementById('phrase').textContent = phrases[Math.floor(Math.random() * phrases.length)];
+
+        function updateTimer() {
+            const difference = nextSummer - Date.now();
+
+            if (difference <= 0) {
+                document.getElementById('days').textContent = '00';
+                document.getElementById('hours').textContent = '00';
+                document.getElementById('minutes').textContent = '00';
+                document.getElementById('seconds').textContent = '00';
+                document.getElementById('phrase').textContent = 'Лето пришло!';
+                return;
+            }
+
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+            document.getElementById('days').textContent = days < 10 ? '0' + days : days;
+            document.getElementById('hours').textContent = hours < 10 ? '0' + hours : hours;
+            document.getElementById('minutes').textContent = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('seconds').textContent = seconds < 10 ? '0' + seconds : seconds;
+        }
+
+        updateTimer();
+        setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>
